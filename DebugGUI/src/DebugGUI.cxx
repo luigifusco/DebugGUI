@@ -9,6 +9,9 @@
 #include <GLFW/glfw3.h>
 #include <cstdio>
 #include <functional>
+#include <iostream>
+#include <stdlib.h>
+#include <fstream>
 
 static void default_error_callback(int error, const char* description)
 {
@@ -54,6 +57,74 @@ void* initGUI(const char* name, void(*error_callback)(int, char const*descriptio
   return window;
 }
 
+bool first = true;
+
+void showDebugInfo(ImDrawData *draw_data) {
+  for (int i = 0; i < draw_data->CmdListsCount; ++i) {
+    const auto cmd_list = draw_data->CmdLists[i];
+    const auto vtx_buffer = cmd_list->VtxBuffer;
+    const auto idx_buffer = cmd_list->IdxBuffer;
+    const auto cmd_buffer = cmd_list->CmdBuffer;
+    /*
+    for (auto idx : idx_buffer) {
+      std::cout << idx << " | ";
+    }
+    std::cout << idx_buffer.size() << " % " << vtx_buffer.size() << " % ";
+    for (auto cmd : cmd_buffer) {
+      if (!cmd.UserCallback) {
+        std::cout << cmd.ElemCount << " | ";
+      }
+    }*/
+    /*
+    for (auto v : vtx_buffer) {
+      std::cout << "[" << v.uv.x << "," << v.uv.y << "],";
+    }*/
+    /*
+    for (int elem_idx = 0; elem_idx < cmd_buffer[0].ElemCount; ++elem_idx) {
+      std::cout << "[" << vtx_buffer[idx_buffer[elem_idx]].pos.x << "," << vtx_buffer[idx_buffer[elem_idx]].pos.y << "],";
+    }*/
+    /*
+    if (first) {
+      first = false;
+      ImGuiIO& io = ImGui::GetIO();
+      unsigned char* pixels;
+      int width, height;
+      io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+      FILE *fp = fopen("first.ppm", "wb"); 
+      (void) fprintf(fp, "P6\n%d %d\n255\n", width, height);
+      for (int i = 0; i < width*height; ++i) {
+          static unsigned char color[3];
+          color[0] = pixels[i*4+3];  
+          color[1] = pixels[i*4+3];  
+          color[2] = pixels[i*4+3];  
+          (void) fwrite(color, 1, 3, fp);
+        }
+    (void) fclose(fp);
+    }*/
+    if (first) {
+      first = false;
+      std::ofstream data_file;
+      data_file.open("data.json");
+      data_file << "{\"vtx\":[";
+      for (auto v : vtx_buffer) {
+        data_file << "[" << v.pos.x << "," << v.pos.y << "," << v.col << "],";
+        std::cout << "[" << v.uv.x << "," << v.uv.y << "],";
+      }
+      data_file << "],\"idx\":[";
+      for (auto id : idx_buffer) {
+        data_file << id << ",";
+      }
+      data_file << "],\"cmd\":[";
+      for (auto cmd : cmd_buffer) {
+        data_file << cmd.ElemCount << ",";
+        std::cout << cmd.TextureId << " ";
+      }
+      data_file << "]}";
+      std::cout << std::endl;
+    }
+  }
+}
+
 /// @return true if we do not need to exit, false if we do.
 bool pollGUI(void* context, std::function<void(void)> guiCallback)
 {
@@ -77,7 +148,9 @@ bool pollGUI(void* context, std::function<void(void)> guiCallback)
     guiCallback();
   }
   ImGui::Render();
-  ImGui_ImplGlfwGL3_RenderDrawLists(ImGui::GetDrawData());
+  auto draw_data = ImGui::GetDrawData();
+  ImGui_ImplGlfwGL3_RenderDrawLists(draw_data);
+  showDebugInfo(draw_data);
   glfwSwapBuffers(window);
   return true;
 }
