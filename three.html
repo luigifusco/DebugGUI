@@ -52,7 +52,7 @@
             var MAX_TRIANGLES = 21844; // *3 ~= 65536
 
             geometry = new THREE.BufferGeometry();
-            geometry.setAttribute( 'index',    new THREE.BufferAttribute( new Uint16Array ( MAX_TRIANGLES * 3 ), 1 ) );
+            geometry.setIndex( new THREE.BufferAttribute( new Uint16Array ( MAX_TRIANGLES * 3 ), 1) );
             geometry.setAttribute( 'position', new THREE.BufferAttribute( new Float32Array( MAX_TRIANGLES * 3 * 3 ), 3 ) );
             geometry.setAttribute( 'uv',       new THREE.BufferAttribute( new Float32Array( MAX_TRIANGLES * 2 * 3 ), 2 ) );
             geometry.setAttribute( 'color',    new THREE.BufferAttribute( new Float32Array( MAX_TRIANGLES * 3 * 3 ), 3 ) );
@@ -68,6 +68,7 @@
             const colorArr = geometry.attributes.color.array;
             const alphaArr = geometry.attributes.alpha.array;
             const uvArray = geometry.attributes.uv.array;
+            const indexArray = geometry.index.array;
             for (let i = 0; i < data.vtx.length; ++i) {
                 const raw_color = data.vtx[i][2];
                 posArr[i*3] = data.vtx[i][0]*10;
@@ -81,32 +82,31 @@
                 uvArray[i*2+1] = data.vtx[i][4];
             }
 
+            for (let i = 0; i < data.idx.length; ++i) {
+                indexArray[i] = data.idx[i];
+            }
+
             geometry.attributes.position.needsUpdate = true;
             geometry.attributes.uv.needsUpdate = true;
             geometry.attributes.color.needsUpdate = true;
             geometry.attributes.alpha.needsUpdate = true;
-            geometry.attributes.index.needsUpdate = true;
+            geometry.index.needsUpdate = true;
+
 
 			const renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			document.body.appendChild( renderer.domElement );
 
-            renderer.render(scene, camera);
+            var range = 0;
 
+            const animate = function () {
+                requestAnimationFrame(animate);
+                geometry.setDrawRange(0, range);
+                renderer.render( scene, camera );
+                range = (range+1) % (data.idx.length+1);
+            }
 
-
-/*
-
-			const animate = function () {
-				requestAnimationFrame( animate );
-
-				cube.rotation.x += 0.01;
-				cube.rotation.y += 0.01;    
-
-				renderer.render( scene, camera );
-			};
-
-			animate();*/
+            animate();
 		</script>
 	</body>
 </html>
