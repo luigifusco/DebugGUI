@@ -23,7 +23,7 @@
             for (let v = curr_vertex; v < curr_vertex + data.cmd[c]; v+=3) {
                 let raw_color = data.vtx[data.idx[v+2]][2];
                 ctx.beginPath();
-                ctx.fillStyle = 'rgba(' + (raw_color & 255) + ',' + (raw_color>>8 & 255) + ',' + (raw_color>>16 & 255) + ',' + (raw_color>>24 & 255)/255 + ')';
+                ctx.fillStyle = 'rgb(' + (raw_color & 255) + ',' + (raw_color>>8 & 255) + ',' + (raw_color>>16 & 255) + ',' + (raw_color>>24 & 255)/255 + ')';
                 console.log('rgba(' + (raw_color & 255) + ',' + (raw_color>>8 & 255) + ',' + (raw_color>>16 & 255) + ',' + (raw_color>>24 & 255)/255 + ')');
                 ctx.moveTo(data.vtx[data.idx[v]][0], data.vtx[data.idx[v]][1]);
                 ctx.lineTo(data.vtx[data.idx[v+1]][0], data.vtx[data.idx[v+1]][1]);
