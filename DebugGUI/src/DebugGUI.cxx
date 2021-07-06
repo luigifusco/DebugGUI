@@ -107,8 +107,7 @@ void showDebugInfo(ImDrawData *draw_data) {
       data_file.open("data.json");
       data_file << "{\"vtx\":[";
       for (auto v : vtx_buffer) {
-        data_file << "[" << v.pos.x << "," << v.pos.y << "," << v.col << "],";
-        std::cout << "[" << v.uv.x << "," << v.uv.y << "],";
+        data_file << "[" << v.pos.x << "," << v.pos.y << "," << v.col << ',' << v.uv.x << "," << v.uv.y << "],";
       }
       data_file << "],\"idx\":[";
       for (auto id : idx_buffer) {
@@ -119,7 +118,15 @@ void showDebugInfo(ImDrawData *draw_data) {
         data_file << cmd.ElemCount << ",";
         std::cout << cmd.TextureId << " ";
       }
-      data_file << "]}";
+      ImGuiIO& io = ImGui::GetIO();
+      unsigned char* pixels;
+      int width, height;
+      io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+      data_file << "],\"tex\":{\"w\":" << width << ",\"h\":" << height << ",\"p\":[";
+      for (int i = 0; i < width*height; ++i) {
+        data_file << (int)pixels[i*4+3] << ",";
+      }
+      data_file << "]}}";
       std::cout << std::endl;
     }
   }
