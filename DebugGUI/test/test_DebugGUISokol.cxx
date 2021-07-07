@@ -15,6 +15,9 @@
 using namespace o2::framework;
 using namespace o2::framework;
 
+char buf[10];
+float f;
+
 int main(int argc, char** argv)
 {
   auto context = initGUI("Foo");
@@ -22,8 +25,14 @@ int main(int argc, char** argv)
 
   auto callback = []() -> void {
     sokol::render3D();
-    ImGui::Begin(ICON_FA_STAR "Test");
-    ImGui::Text("Some text");
+    ImGui::Begin("Hello");
+    ImGui::Text("Hello, world %d", 123);
+    ImGui::Button("Save");
+    ImGui::InputText("string", buf, IM_ARRAYSIZE(buf));
+    ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+    ImGui::End();
+    ImGui::Begin("World");
+    ImGui::Text("Sample text");
     ImGui::End();
   };
   while (pollGUI(context, callback)) {
