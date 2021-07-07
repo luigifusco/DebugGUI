@@ -65,15 +65,15 @@ void* initGUI(const char* name, void(*error_callback)(int, char const*descriptio
 
 
 void showDebugInfo(ImDrawData *draw_data) {
-  for (int i = 0; i < draw_data->CmdListsCount; ++i) {
-    const auto cmd_list = draw_data->CmdLists[i];
-    const auto vtx_buffer = cmd_list->VtxBuffer;
-    const auto idx_buffer = cmd_list->IdxBuffer;
-    const auto cmd_buffer = cmd_list->CmdBuffer;
+  if (first && draw_data->CmdListsCount > 0) {
+    first = false;
+    data_file << "[";
+    for (int i = 0; i < draw_data->CmdListsCount; ++i) {
+      const auto cmd_list = draw_data->CmdLists[i];
+      const auto vtx_buffer = cmd_list->VtxBuffer;
+      const auto idx_buffer = cmd_list->IdxBuffer;
+      const auto cmd_buffer = cmd_list->CmdBuffer;
     
-    times++;
-    if (times == 10) {
-      first = false;
       data_file << "{\"vtx\":[";
       for (int i = 0; i < vtx_buffer.size(); ++i) {
         auto v = vtx_buffer[i];
@@ -102,8 +102,10 @@ void showDebugInfo(ImDrawData *draw_data) {
       }
       data_file << "]}}";*/
       data_file << "]}";
-      data_file.close();
+      if (i < draw_data->CmdListsCount - 1) data_file << ",";
     }
+    data_file << "]";
+    data_file.close();
   }
 }
 
