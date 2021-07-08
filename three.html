@@ -10,128 +10,148 @@
 	<body>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 		<script>
-            fetch("data.json").then(
-                response => response.json()
-            ).then( data => {
-                var guniforms = {
-                    tTex: { type: 't', value: null },
-                    uClip: { type: 'v4', value: new THREE.Vector4() },
-                };
+            new THREE.TextureLoader().load( "texture.png", ( map ) => {
+                fetch("data.json").then(
+                    response => response.json()
+                ).then( data => {
+                    console.log(data);
+                    var guniforms = {
+                        tTex: { type: 't', value: null },
+                        uClip: { type: 'v4', value: new THREE.Vector4() },
+                    };
 
-                var ImVS = [
-                    "attribute float alpha;",
+                    var ImVS = [
+                        "attribute float alpha;",
 
-                    "varying vec3 vColor;",
-                    "varying vec2 vUv;",
-                    "varying float vAlpha;",
+                        "varying vec3 vColor;",
+                        "varying vec2 vUv;",
+                        "varying float vAlpha;",
 
-                    "void main() {",
+                        "void main() {",
 
-                        "vColor = color;",
-                        "vUv = uv;",
-                        "vAlpha = alpha;",
-                        "gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );",
+                            "vColor = color;",
+                            "vUv = uv;",
+                            "vAlpha = alpha;",
+                            "gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );",
 
-                    "}" ].join("\n");
+                        "}" ].join("\n");
 
-                var ImFS = [
-                    "varying vec3 vColor;",
-                    "varying vec2 vUv;",
-                    "varying float vAlpha;",
+                    var ImFS = [
+                        "varying vec3 vColor;",
+                        "varying vec2 vUv;",
+                        "varying float vAlpha;",
+                        
+                        "uniform sampler2D tTex;",
+
+                        "void main() {",
+                                "gl_FragColor = vec4( vColor, texture2D( tTex, vUv ).a * vAlpha );",
+                        "}" ].join("\n");
+
+                    var material = new THREE.ShaderMaterial( {
+                        uniforms: guniforms,
+                        vertexShader: ImVS,
+                        fragmentShader: ImFS,
+                        vertexColors: THREE.VertexColors,
+                        transparent: true,
+                        side: THREE.DoubleSide } );
+
                     
-                    "uniform sampler2D tTex;",
+                    const scene = new THREE.Scene();
+                    const camera = new THREE.OrthographicCamera( 0, window.innerWidth, 0, window.innerHeight, -1, 1 );
+                    camera.position.z = 1;
 
-                    "void main() {",
-                            "gl_FragColor = vec4( vColor, texture2D( tTex, vUv ).a * vAlpha );",
-                    "}" ].join("\n");
+                    var MAX_TRIANGLES = 21844; // *3 ~= 65536
 
-                var material = new THREE.ShaderMaterial( {
-                    uniforms: guniforms,
-                    vertexShader: ImVS,
-                    fragmentShader: ImFS,
-                    vertexColors: THREE.VertexColors,
-                    transparent: true,
-                    side: THREE.DoubleSide } );
+                    geometry = new THREE.BufferGeometry();
+                    geometry.setIndex( new THREE.BufferAttribute( new Uint16Array ( MAX_TRIANGLES * 3 ), 1) );
+                    geometry.setAttribute( 'position', new THREE.BufferAttribute( new Float32Array( MAX_TRIANGLES * 3 * 3 ), 3 ) );
+                    geometry.setAttribute( 'uv',       new THREE.BufferAttribute( new Float32Array( MAX_TRIANGLES * 2 * 3 ), 2 ) );
+                    geometry.setAttribute( 'color',    new THREE.BufferAttribute( new Float32Array( MAX_TRIANGLES * 3 * 3 ), 3 ) );
+                    geometry.setAttribute( 'alpha',    new THREE.BufferAttribute( new Float32Array( MAX_TRIANGLES * 1     ), 1 ) );
+                    geometry.dynamic = true;
+                    geometry.offsets = [ { start: 0, index: 0, count: 0 } ];
 
-                
-                const scene = new THREE.Scene();
-                const camera = new THREE.OrthographicCamera( 0, window.innerWidth, 0, window.innerHeight, -1, 1 );
-                camera.position.z = 1;
+                    var mesh = new THREE.Mesh( geometry, material );
+                    mesh.frustumCulled = false;
+                    scene.add( mesh );
 
-                var MAX_TRIANGLES = 21844; // *3 ~= 65536
-
-                geometry = new THREE.BufferGeometry();
-                geometry.setIndex( new THREE.BufferAttribute( new Uint16Array ( MAX_TRIANGLES * 3 ), 1) );
-                geometry.setAttribute( 'position', new THREE.BufferAttribute( new Float32Array( MAX_TRIANGLES * 3 * 3 ), 3 ) );
-                geometry.setAttribute( 'uv',       new THREE.BufferAttribute( new Float32Array( MAX_TRIANGLES * 2 * 3 ), 2 ) );
-                geometry.setAttribute( 'color',    new THREE.BufferAttribute( new Float32Array( MAX_TRIANGLES * 3 * 3 ), 3 ) );
-                geometry.setAttribute( 'alpha',    new THREE.BufferAttribute( new Float32Array( MAX_TRIANGLES * 1     ), 1 ) );
-                geometry.dynamic = true;
-                geometry.offsets = [ { start: 0, index: 0, count: 0 } ];
-
-                var mesh = new THREE.Mesh( geometry, material );
-                mesh.frustumCulled = false;
-                scene.add( mesh );
-
-                const posArr = geometry.attributes.position.array;
-                const colorArr = geometry.attributes.color.array;
-                const alphaArr = geometry.attributes.alpha.array;
-                const uvArray = geometry.attributes.uv.array;
-                const indexArray = geometry.index.array;
-                let idx = 0;
-                let index_idx = 0;
-                let index_length = 0;
-                for (const cmd of data) {
-                    console.log(cmd.idx.length);
-                    index_length += cmd.idx.length;
-                    for (let i = 0; i < cmd.vtx.length; ++i) {
-                        const raw_color = cmd.vtx[i][2];
-                        posArr[idx*3] = cmd.vtx[i][0];
-                        posArr[idx*3+1] = cmd.vtx[i][1];
-                        posArr[idx*3+2] = 0;
-                        colorArr[idx*3] = (raw_color & 255)/255;
-                        colorArr[idx*3+1] = (raw_color>>8 & 255)/255;
-                        colorArr[idx*3+2] = (raw_color>>16 & 255)/255;
-                        alphaArr[idx] = (raw_color>>24 & 255)/255;
-                        uvArray[idx*2] = cmd.vtx[i][3];
-                        uvArray[idx*2+1] = 1-cmd.vtx[i][4];
-                        idx++;
+                    const posArr = geometry.attributes.position.array;
+                    const colorArr = geometry.attributes.color.array;
+                    const alphaArr = geometry.attributes.alpha.array;
+                    const uvArray = geometry.attributes.uv.array;
+                    const indexArray = geometry.index.array;
+                    let idx = 0;
+                    let index_idx = 0;
+                    let index_length = 0;
+                    let vtx_length = 0;
+                    let all_cmds = []
+                    for (const cmd of data) {
+                        console.log(cmd.idx.length);
+                        all_cmds.push(...cmd.cmd);
+                        for (let i = 0; i < cmd.vtx.length; ++i) {
+                            const raw_color = cmd.vtx[i][2];
+                            posArr[idx*3] = cmd.vtx[i][0];
+                            posArr[idx*3+1] = cmd.vtx[i][1];
+                            posArr[idx*3+2] = 0;
+                            colorArr[idx*3] = (raw_color & 255)/255;
+                            colorArr[idx*3+1] = (raw_color>>8 & 255)/255;
+                            colorArr[idx*3+2] = (raw_color>>16 & 255)/255;
+                            alphaArr[idx] = (raw_color>>24 & 255)/255;
+                            uvArray[idx*2] = cmd.vtx[i][3];
+                            uvArray[idx*2+1] = 1-cmd.vtx[i][4];
+                            idx++;
+                        }
+                        for (let i = 0; i < cmd.idx.length; ++i) {
+                            indexArray[index_idx] = cmd.idx[i] + vtx_length;
+                            index_idx++;
+                        }
+                        index_length += cmd.idx.length;
+                        vtx_length += cmd.vtx.length;
                     }
-                    for (let i = 0; i < cmd.idx.length; ++i) {
-                        indexArray[index_idx] = cmd.idx[i];
-                        index_idx++;
+
+
+                    geometry.attributes.position.needsUpdate = true;
+                    geometry.attributes.uv.needsUpdate = true;
+                    geometry.attributes.color.needsUpdate = true;
+                    geometry.attributes.alpha.needsUpdate = true;
+                    geometry.index.needsUpdate = true;
+
+
+                    map.needsUpdate = true;
+                    map.minFilter = map.magFilter = THREE.NearestFilter;
+                    guniforms.tTex.value = map;
+
+                    const renderer = new THREE.WebGLRenderer();
+                    renderer.autoClear = false;
+                    renderer.setSize( window.innerWidth, window.innerHeight );
+                    document.body.appendChild( renderer.domElement );
+                    renderer.setScissorTest(true);
+
+                    var range = 0;
+                    let curr_base = 0;
+                    for (const cmd of all_cmds) {
+                        console.log(cmd.clp[0], window.innerHeight - cmd.clp[3], cmd.clp[2] - cmd.clp[0], cmd.clp[3] - cmd.clp[1]);
+                        console.log(curr_base, cmd.cnt);
+                        renderer.setScissor(cmd.clp[0], window.innerHeight - cmd.clp[3], cmd.clp[2] - cmd.clp[0], cmd.clp[3] - cmd.clp[1]);
+
+                        geometry.setDrawRange(curr_base, cmd.cnt);
+                        renderer.render( scene, camera );
+                        curr_base += cmd.cnt;
                     }
-                }
 
+                    const animate = function () {
+                        requestAnimationFrame(animate);
+                        let curr_base = 0;
+                        for (const cmd of all_cmds) {
+                            renderer.setScissor(cmd.clp[0], window.innerHeight - cmd.clp[3], cmd.clp[2] - cmd.clp[0], cmd.clp[3] - cmd.clp[1]);
+                            geometry.setDrawRange(curr_base, cmd.cnt);
+                            renderer.render( scene, camera );
+                            curr_base += cmd.cnt;
+                        }
+                    }
 
-                geometry.attributes.position.needsUpdate = true;
-                geometry.attributes.uv.needsUpdate = true;
-                geometry.attributes.color.needsUpdate = true;
-                geometry.attributes.alpha.needsUpdate = true;
-                geometry.index.needsUpdate = true;
-
-
-                var map = new THREE.TextureLoader().load( "texture.png" );
-                map.needsUpdate = true;
-                map.minFilter = map.magFilter = THREE.NearestFilter;
-                guniforms.tTex.value = map;
-
-                const renderer = new THREE.WebGLRenderer();
-                renderer.setSize( window.innerWidth, window.innerHeight );
-                document.body.appendChild( renderer.domElement );
-
-                geometry.setDrawRange(0, index_length);
-                renderer.render( scene, camera );
-                var range = 0;
-
-                const animate = function () {
-                    requestAnimationFrame(animate);
-                    geometry.setDrawRange(0, index_length);
-                    range = (range+1) % (324+1);
-                    renderer.render( scene, camera );
-                }
-
-                animate();
+                    //animate();
+                });
             });
 
 		</script>

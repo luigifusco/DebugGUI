@@ -89,7 +89,7 @@ void showDebugInfo(ImDrawData *draw_data) {
       data_file << "],\"cmd\":[";
       for (int i = 0; i < cmd_buffer.size(); ++i) {
         auto cmd = cmd_buffer[i];
-        data_file << cmd.ElemCount;
+        data_file << "{\"cnt\":" << cmd.ElemCount << ", \"clp\":[" << cmd.ClipRect.x << "," << cmd.ClipRect.y << "," << cmd.ClipRect.z << "," << cmd.ClipRect.w << "]}";
         if (i < cmd_buffer.size() - 1) data_file << ",";
       }
       /*ImGuiIO& io = ImGui::GetIO();
@@ -106,7 +106,9 @@ void showDebugInfo(ImDrawData *draw_data) {
     }
     data_file << "]";
     data_file.close();
+    std::cout << "done!" << std::endl;
   }
+  times++;
 }
 
 /// @return true if we do not need to exit, false if we do.
