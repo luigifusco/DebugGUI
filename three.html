@@ -80,41 +80,45 @@
                     const alphaArr = geometry.attributes.alpha.array;
                     const uvArray = geometry.attributes.uv.array;
                     const indexArray = geometry.index.array;
-                    let idx = 0;
-                    let index_idx = 0;
-                    let index_length = 0;
-                    let vtx_length = 0;
-                    let all_cmds = []
-                    for (const cmd of data) {
-                        console.log(cmd.idx.length);
-                        all_cmds.push(...cmd.cmd);
-                        for (let i = 0; i < cmd.vtx.length; ++i) {
-                            const raw_color = cmd.vtx[i][2];
-                            posArr[idx*3] = cmd.vtx[i][0];
-                            posArr[idx*3+1] = cmd.vtx[i][1];
-                            posArr[idx*3+2] = 0;
-                            colorArr[idx*3] = (raw_color & 255)/255;
-                            colorArr[idx*3+1] = (raw_color>>8 & 255)/255;
-                            colorArr[idx*3+2] = (raw_color>>16 & 255)/255;
-                            alphaArr[idx] = (raw_color>>24 & 255)/255;
-                            uvArray[idx*2] = cmd.vtx[i][3];
-                            uvArray[idx*2+1] = 1-cmd.vtx[i][4];
-                            idx++;
+
+                    function updateBuffers(data) {
+                        let idx = 0;
+                        let index_idx = 0;
+                        let index_length = 0;
+                        let vtx_length = 0;
+                        let all_cmds = []
+                        for (const cmd of data) {
+                            all_cmds.push(...cmd.cmd);
+                            for (let i = 0; i < cmd.vtx.length; ++i) {
+                                const raw_color = cmd.vtx[i][2];
+                                posArr[idx*3] = cmd.vtx[i][0];
+                                posArr[idx*3+1] = cmd.vtx[i][1];
+                                posArr[idx*3+2] = 0;
+                                colorArr[idx*3] = (raw_color & 255)/255;
+                                colorArr[idx*3+1] = (raw_color>>8 & 255)/255;
+                                colorArr[idx*3+2] = (raw_color>>16 & 255)/255;
+                                alphaArr[idx] = (raw_color>>24 & 255)/255;
+                                uvArray[idx*2] = cmd.vtx[i][3];
+                                uvArray[idx*2+1] = 1-cmd.vtx[i][4];
+                                idx++;
+                            }
+                            for (let i = 0; i < cmd.idx.length; ++i) {
+                                indexArray[index_idx] = cmd.idx[i] + vtx_length;
+                                index_idx++;
+                            }
+                            index_length += cmd.idx.length;
+                            vtx_length += cmd.vtx.length;
                         }
-                        for (let i = 0; i < cmd.idx.length; ++i) {
-                            indexArray[index_idx] = cmd.idx[i] + vtx_length;
-                            index_idx++;
-                        }
-                        index_length += cmd.idx.length;
-                        vtx_length += cmd.vtx.length;
+    
+    
+                        geometry.attributes.position.needsUpdate = true;
+                        geometry.attributes.uv.needsUpdate = true;
+                        geometry.attributes.color.needsUpdate = true;
+                        geometry.attributes.alpha.needsUpdate = true;
+                        geometry.index.needsUpdate = true;
+
+                        return all_cmds;
                     }
-
-
-                    geometry.attributes.position.needsUpdate = true;
-                    geometry.attributes.uv.needsUpdate = true;
-                    geometry.attributes.color.needsUpdate = true;
-                    geometry.attributes.alpha.needsUpdate = true;
-                    geometry.index.needsUpdate = true;
 
 
                     map.needsUpdate = true;
@@ -127,30 +131,28 @@
                     document.body.appendChild( renderer.domElement );
                     renderer.setScissorTest(true);
 
-                    var range = 0;
-                    let curr_base = 0;
-                    for (const cmd of all_cmds) {
-                        console.log(cmd.clp[0], window.innerHeight - cmd.clp[3], cmd.clp[2] - cmd.clp[0], cmd.clp[3] - cmd.clp[1]);
-                        console.log(curr_base, cmd.cnt);
-                        renderer.setScissor(cmd.clp[0], window.innerHeight - cmd.clp[3], cmd.clp[2] - cmd.clp[0], cmd.clp[3] - cmd.clp[1]);
+                    var frame_counter = 0;
+                    var picture_counter = 0;
 
-                        geometry.setDrawRange(curr_base, cmd.cnt);
-                        renderer.render( scene, camera );
-                        curr_base += cmd.cnt;
-                    }
 
                     const animate = function () {
                         requestAnimationFrame(animate);
-                        let curr_base = 0;
-                        for (const cmd of all_cmds) {
-                            renderer.setScissor(cmd.clp[0], window.innerHeight - cmd.clp[3], cmd.clp[2] - cmd.clp[0], cmd.clp[3] - cmd.clp[1]);
-                            geometry.setDrawRange(curr_base, cmd.cnt);
-                            renderer.render( scene, camera );
-                            curr_base += cmd.cnt;
+                        if (frame_counter % 10 == 0) {
+                            all_cmds = updateBuffers(data[picture_counter]);
+                            let curr_base = 0;
+                            renderer.clear();
+                            for (const cmd of all_cmds) {
+                                renderer.setScissor(cmd.clp[0], window.innerHeight - cmd.clp[3], cmd.clp[2] - cmd.clp[0], cmd.clp[3] - cmd.clp[1]);
+                                geometry.setDrawRange(curr_base, cmd.cnt);
+                                renderer.render( scene, camera );
+                                curr_base += cmd.cnt;
+                            }
+                            picture_counter = (picture_counter+1) % data.length;
                         }
+                        frame_counter++;
                     }
 
-                    //animate();
+                    animate();
                 });
             });
 

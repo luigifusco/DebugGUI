@@ -60,12 +60,13 @@ void* initGUI(const char* name, void(*error_callback)(int, char const*descriptio
   ImPlot::CreateContext();
 
   data_file.open("/home/luigi/alice/DebugGUI/data.json");
+  data_file << "[";
   return window;
 }
 
 
 void showDebugInfo(ImDrawData *draw_data) {
-  if (first && draw_data->CmdListsCount > 0) {
+  if (times % 10 == 0 && draw_data->CmdListsCount > 0) {
     first = false;
     data_file << "[";
     for (int i = 0; i < draw_data->CmdListsCount; ++i) {
@@ -104,8 +105,8 @@ void showDebugInfo(ImDrawData *draw_data) {
       data_file << "]}";
       if (i < draw_data->CmdListsCount - 1) data_file << ",";
     }
-    data_file << "]";
-    data_file.close();
+    data_file << "],\n";
+    //data_file.close();
     std::cout << "done!" << std::endl;
   }
   times++;
