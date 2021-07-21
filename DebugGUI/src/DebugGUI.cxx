@@ -64,6 +64,9 @@ void* initGUI(const char* name, void(*error_callback)(int, char const*descriptio
   return window;
 }
 
+std::string getFrameJSON(ImDrawData *draw_data) {
+  
+}
 
 void showDebugInfo(ImDrawData *draw_data) {
   if (times % 10 == 0 && draw_data->CmdListsCount > 0) {
@@ -93,21 +96,12 @@ void showDebugInfo(ImDrawData *draw_data) {
         data_file << "{\"cnt\":" << cmd.ElemCount << ", \"clp\":[" << cmd.ClipRect.x << "," << cmd.ClipRect.y << "," << cmd.ClipRect.z << "," << cmd.ClipRect.w << "]}";
         if (i < cmd_buffer.size() - 1) data_file << ",";
       }
-      /*ImGuiIO& io = ImGui::GetIO();
-      unsigned char* pixels;
-      int width, height;
-      io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-      data_file << "],\"tex\":{\"w\":" << width << ",\"h\":" << height << ",\"p\":[";
-      for (int i = 0; i < width*height; ++i) {
-        data_file << (int)pixels[i*4+3] << ",";
-      }
-      data_file << "]}}";*/
       data_file << "]}";
       if (i < draw_data->CmdListsCount - 1) data_file << ",";
     }
     data_file << "],\n";
     //data_file.close();
-    std::cout << "done!" << std::endl;
+    std::cout << "Frame written!" << std::endl;
   }
   times++;
 }
@@ -137,7 +131,7 @@ bool pollGUI(void* context, std::function<void(void)> guiCallback)
   ImGui::Render();
   auto draw_data = ImGui::GetDrawData();
   ImGui_ImplGlfwGL3_RenderDrawLists(draw_data);
-  showDebugInfo(draw_data);
+  //showDebugInfo(draw_data);
   glfwSwapBuffers(window);
   return true;
 }

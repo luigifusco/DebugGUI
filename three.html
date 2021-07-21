@@ -11,13 +11,12 @@
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 		<script>
             new THREE.TextureLoader().load( "texture.png", ( map ) => {
-                fetch("data.json").then(
+                fetch("video.json").then(
                     response => response.json()
                 ).then( data => {
                     console.log(data);
                     var guniforms = {
                         tTex: { type: 't', value: null },
-                        uClip: { type: 'v4', value: new THREE.Vector4() },
                     };
 
                     var ImVS = [
@@ -60,14 +59,14 @@
                     const camera = new THREE.OrthographicCamera( 0, window.innerWidth, 0, window.innerHeight, -1, 1 );
                     camera.position.z = 1;
 
-                    var MAX_TRIANGLES = 21844; // *3 ~= 65536
+                    var MAX_VERTICES = 65535;
 
                     geometry = new THREE.BufferGeometry();
-                    geometry.setIndex( new THREE.BufferAttribute( new Uint16Array ( MAX_TRIANGLES * 3 ), 1) );
-                    geometry.setAttribute( 'position', new THREE.BufferAttribute( new Float32Array( MAX_TRIANGLES * 3 * 3 ), 3 ) );
-                    geometry.setAttribute( 'uv',       new THREE.BufferAttribute( new Float32Array( MAX_TRIANGLES * 2 * 3 ), 2 ) );
-                    geometry.setAttribute( 'color',    new THREE.BufferAttribute( new Float32Array( MAX_TRIANGLES * 3 * 3 ), 3 ) );
-                    geometry.setAttribute( 'alpha',    new THREE.BufferAttribute( new Float32Array( MAX_TRIANGLES * 1     ), 1 ) );
+                    geometry.setIndex( new THREE.BufferAttribute( new Uint16Array ( MAX_VERTICES ), 1) );
+                    geometry.setAttribute( 'position', new THREE.BufferAttribute( new Float32Array( MAX_VERTICES * 3 ), 3 ) );
+                    geometry.setAttribute( 'uv',       new THREE.BufferAttribute( new Float32Array( MAX_VERTICES * 2 ), 2 ) );
+                    geometry.setAttribute( 'color',    new THREE.BufferAttribute( new Float32Array( MAX_VERTICES * 3 ), 3 ) );
+                    geometry.setAttribute( 'alpha',    new THREE.BufferAttribute( new Float32Array( MAX_VERTICES     ), 1 ) );
                     geometry.dynamic = true;
                     geometry.offsets = [ { start: 0, index: 0, count: 0 } ];
 
